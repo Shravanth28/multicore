@@ -1,0 +1,87 @@
+import pandas as pd
+import numpy as np
+import multiprocessing
+import time
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix,classification_report,accuracy_score,r2_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+import warnings
+warnings.filterwarnings('ignore')
+from sklearn.metrics import roc_curve
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+from sklearn.metrics import precision_score,recall_score
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error,mean_absolute_error
+from sklearn.metrics import zero_one_loss
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import KFold,StratifiedKFold,LeaveOneOut
+import statistics as st
+df = {
+    'age':[30,33,35,30,59],
+    'job':['unemployed','services','management','management','blue-collar'],
+    'marital':['married','married','single','married','married'],
+    'education':['primary','secondary','tertiary','tertiary','secondary'],
+    'default':['no','no','no','no','no'],
+    'balance':[1787,4789,1350,1476,0],
+    'housing':['no','yes','yes','yes','yes'],
+    'loan':['no','yes','no','yes','no'],
+    'contact':['cellular','cellular','cellular','unknown','unknown'],
+    'day':[19,11,16,3,5],
+    'month':['oct','may','apr','jun','may'],
+    'duration':[79,220,185,199,226],
+    'campaign':[1,1,1,4,1],
+    'pdays':[-1,339,339,-1,-1],
+    'previous':[0,4,1,0,0],
+    'poutcome':['unknown','failure','failure','unknown','unknown'],
+    'y':['no','no','no','no','no']
+}
+data = pd.DataFrame(df)
+print(data.head())
+data['poutcome'].value_counts()
+
+results = []
+
+def processData(data, outcome_filter):
+    print(outcome_filter)
+    df_filter=data[data['poutcome']==outcome_filter]
+    df_filter.drop(['poutcome'], axis=1, inplace=True)
+    data_new=df_filter
+    clf=RandomForestClassifier(n_estimators=100)
+    X=data_new.drop('y', axis=1)  # Features
+    y=data_new['y']  # Labels
+
+    # Split dataset into training set and test set
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
+    clf.fit(X_train,y_train)
+    y_out = clf.predict(X_test)
+    X_test['poutcome']=outcome_filter
+    cols=list(X_test.columns) + ['Actual']
+    out=pd.concat([X_test, y_test], axis=1, ignore_index=True)
+    out.columns=cols
+    out.reset_index(drop=True, inplace=True)
+    final_out=pd.concat([out, pd.DataFrame(y_out)], axis=1, ignore_index=True)
+    final_out.columns=list(out.columns)+['Prediction']
+    print(final_out.shape)
+    return final_out
+
+def collect_results(result):
+    results.extend(result.values.tolist())
+
+multiprocessing.cpu_count()
+if __name__ == "__main__":
+    start_time = time.time()
+
+    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+    pool.close()
+    pool.join()
+
+
+    print("--- %s seconds ---" % (time.time() - start_time))
